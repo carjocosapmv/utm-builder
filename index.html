@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PMV UTM Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0eeff;--bg2:#e8e0ff;
+  --surface:rgba(255,255,255,.55);--surface2:rgba(255,255,255,.75);
+  --glass-border:rgba(255,255,255,.85);--glass-soft:rgba(180,150,255,.25);
+  --accent:#7850ff;--accent2:#a855f7;--accent-light:#c4b5fd;
+  --accent-glow:rgba(120,80,255,.18);--accent-bg:rgba(120,80,255,.08);
+  --text:#1e1640;--text-muted:#6b5ea8;--text-dim:#9d90c8;
+  --success:#059669;--warning:#d97706;--error:#dc2626;
+  --shadow-sm:0 2px 12px rgba(120,80,255,.10);--shadow-md:0 8px 32px rgba(120,80,255,.14);
+  --blur:blur(20px);--sw:264px;
+  --sans:Poppins,sans-serif;--mono:SFMono-Regular,Consolas,monospace
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 70% 60% at 10% 0%,rgba(120,80,255,.18) 0,transparent 55%),radial-gradient(ellipse 50% 50% at 90% 100%,rgba(192,132,252,.20) 0,transparent 55%),radial-gradient(ellipse 40% 40% at 50% 50%,rgba(167,139,250,.10) 0,transparent 60%);pointer-events:none;z-index:0}
+.layout{position:relative;z-index:1;display:flex;min-height:100vh}
+
+/* Sidebar */
+.sidebar{width:var(--sw);flex-shrink:0;background:rgba(255,255,255,.58);backdrop-filter:var(--blur);border-right:1.5px solid var(--glass-border);box-shadow:var(--shadow-sm);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;display:flex;flex-direction:column}
+.sb-head{padding:28px 20px 22px;border-bottom:1px solid var(--glass-soft)}
+.sb-logo{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.logo-mark{flex-shrink:0}
+.logo-mark img{width:72px;height:auto;display:block;filter:drop-shadow(0 4px 12px rgba(120,80,255,.25))}
+.logo-name{font-size:14px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--text-muted)}
+.sb-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;background:var(--accent-bg);border:1px solid rgba(120,80,255,.25);font-size:11px;font-weight:600;color:var(--accent)}
+.nav{padding:12px 0;flex:1}
+.nav-group-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);padding:12px 20px 5px;display:block}
+.nav-link{display:flex;align-items:center;gap:9px;padding:9px 20px;color:var(--text-muted);text-decoration:none;font-size:13px;font-weight:500;border-left:2.5px solid transparent;transition:all .15s}
+.nav-link.active,.nav-link:hover{color:var(--accent);background:var(--accent-bg);border-left-color:var(--accent)}
+.sb-foot{padding:16px 20px;border-top:1px solid var(--glass-soft);font-size:11px;color:var(--text-dim);line-height:1.8}
+
+/* Main */
+.main{flex:1;margin-left:var(--sw)}
+.hero{padding:48px 64px 40px;background:rgba(255,255,255,.28);backdrop-filter:var(--blur);border-bottom:1.5px solid rgba(255,255,255,.65)}
+.hero-tag{display:inline-flex;align-items:center;gap:7px;background:var(--accent-bg);border:1px solid rgba(120,80,255,.25);border-radius:100px;padding:5px 16px 5px 10px;font-size:11px;font-weight:600;color:var(--accent);margin-bottom:14px;text-transform:uppercase}
+.hero h1{font-size:clamp(26px,3vw,42px);font-weight:800;line-height:1.1;letter-spacing:-.02em;margin:0 0 10px}
+.grad{background:linear-gradient(135deg,var(--accent) 0,var(--accent2) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.dim{color:var(--text-muted);font-weight:400}
+.hero p{font-size:14px;color:var(--text-muted);max-width:580px;line-height:1.7;margin:0}
+
+.content{padding:0 64px 80px;max-width:1000px}
+.section{padding-top:48px}
+.stitle{font-size:clamp(18px,2.2vw,24px);font-weight:800;line-height:1.15;margin:0 0 6px}
+.sdesc{color:var(--text-muted);font-size:14px;margin:0 0 24px;line-height:1.7}
+
+/* GENERATOR */
+.generator{background:rgba(255,255,255,.70);backdrop-filter:blur(14px);border:1.5px solid var(--glass-border);border-radius:22px;box-shadow:var(--shadow-md);overflow:hidden}
+.gen-body{padding:32px}
+
+.field-group{margin-bottom:24px}
+.field-group:last-of-type{margin-bottom:0}
+.field-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
+.field-label .badge-req{margin-left:auto}
+.badge-req{font-size:10px;font-weight:600;padding:2px 9px;border-radius:100px;background:linear-gradient(135deg,rgba(120,80,255,.11),rgba(168,85,247,.08));border:1px solid rgba(120,80,255,.28);color:var(--accent);white-space:nowrap}
+.badge-opt{font-size:10px;font-weight:600;padding:2px 9px;border-radius:100px;background:rgba(255,255,255,.72);border:1.5px solid var(--glass-soft);color:var(--text-dim);white-space:nowrap;margin-left:auto}
+
+.field-hint{font-size:12px;color:var(--text-dim);margin-bottom:8px;line-height:1.5}
+
+input[type=text],input[type=url]{
+  width:100%;padding:12px 16px;border-radius:12px;
+  border:1.5px solid rgba(120,80,255,.25);
+  background:rgba(255,255,255,.80);
+  font-family:var(--sans);font-size:14px;color:var(--text);
+  outline:none;transition:border .15s,box-shadow .15s
+}
+input[type=text]:focus,input[type=url]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(120,80,255,.12)}
+input[type=text]::placeholder,input[type=url]::placeholder{color:var(--text-dim)}
+input.error{border-color:var(--error);box-shadow:0 0 0 3px rgba(220,38,38,.10)}
+input.valid{border-color:var(--success)}
+
+/* Quick chips */
+.quick-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qchip{font-size:11px;font-weight:600;padding:4px 12px;border-radius:100px;background:rgba(255,255,255,.72);border:1.5px solid var(--glass-soft);color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.qchip:hover{border-color:var(--accent-light);color:var(--accent)}
+.qchip.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+
+/* Two columns for optional fields */
+.fields-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* Preview */
+.gen-preview{background:rgba(120,80,255,.04);border-top:1.5px solid var(--glass-soft);padding:24px 32px}
+.preview-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.10em;color:var(--text-dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.preview-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:2px 10px;border-radius:100px}
+.ps-empty{background:rgba(157,144,200,.12);color:var(--text-dim);border:1px solid rgba(157,144,200,.25)}
+.ps-partial{background:rgba(217,119,6,.10);color:var(--warning);border:1px solid rgba(217,119,6,.25)}
+.ps-ready{background:rgba(5,150,105,.10);color:var(--success);border:1px solid rgba(5,150,105,.25)}
+.ps-error{background:rgba(220,38,38,.10);color:var(--error);border:1px solid rgba(220,38,38,.25)}
+.s-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0}
+
+.url-display{
+  background:rgba(255,255,255,.80);border:1.5px solid var(--glass-soft);border-radius:12px;
+  padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+  color:var(--text-dim);word-break:break-all;min-height:52px;
+  transition:border .2s
+}
+.url-display.has-url{color:var(--text);border-color:rgba(120,80,255,.25)}
+.url-base-part{color:var(--text-muted)}
+.url-q{color:var(--accent);font-weight:600}
+.url-key{color:var(--accent)}
+.url-eq{color:var(--text-dim)}
+.url-val{color:var(--success)}
+.url-amp{color:var(--text-dim)}
+.url-placeholder{color:var(--text-dim);font-style:italic;font-family:var(--sans);font-size:13px}
+
+.copy-row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.btn-copy{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 24px;border-radius:12px;border:none;cursor:pointer;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 4px 14px rgba(120,80,255,.30);
+  transition:all .15s
+}
+.btn-copy:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(120,80,255,.38)}
+.btn-copy:active:not(:disabled){transform:translateY(0)}
+.btn-copy:disabled{opacity:.45;cursor:not-allowed}
+.btn-copy.copied{background:linear-gradient(135deg,var(--success),#10b981)}
+.btn-reset{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:10px 18px;border-radius:12px;border:1.5px solid var(--glass-soft);
+  background:rgba(255,255,255,.72);cursor:pointer;
+  font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text-muted);
+  transition:all .15s
+}
+.btn-reset:hover{border-color:rgba(120,80,255,.35);color:var(--accent)}
+.copy-feedback{font-size:12px;color:var(--success);font-weight:600;opacity:0;transition:opacity .3s}
+.copy-feedback.show{opacity:1}
+
+/* Reference cards */
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:20px}
+.ref-card{background:rgba(255,255,255,.65);backdrop-filter:blur(14px);border:1.5px solid var(--glass-border);border-radius:16px;padding:18px;box-shadow:var(--shadow-sm)}
+.ref-card h4{margin:0 0 6px;font-size:14px}
+.ref-card p{color:var(--text-muted);font-size:12.5px;line-height:1.6;margin:0}
+code{font-family:var(--mono);font-size:11.5px;background:var(--accent-bg);color:var(--accent);padding:1px 6px;border-radius:5px}
+
+/* Field table */
+.field-table{background:rgba(255,255,255,.65);backdrop-filter:blur(14px);border:1.5px solid var(--glass-border);border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-top:20px}
+.ft-header,.ft-row{display:grid;grid-template-columns:150px 1fr 110px}
+.ft-header{background:rgba(255,255,255,.30);border-bottom:1px solid var(--glass-soft);font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-dim)}
+.ft-row{border-bottom:1px solid var(--glass-soft)}
+.ft-row:last-child{border-bottom:none}
+.ft-cell{padding:14px 18px;border-right:1px solid var(--glass-soft);font-size:13px}
+.ft-cell:last-child{border-right:none}
+.ft-name{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600;background:var(--accent-bg);border:1px solid rgba(120,80,255,.18);padding:2px 8px;border-radius:6px;display:inline-block}
+
+/* Steps */
+.steps{background:rgba(255,255,255,.65);backdrop-filter:blur(14px);border:1.5px solid var(--glass-border);border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-top:20px}
+.step-item{display:flex;border-bottom:1px solid var(--glass-soft)}
+.step-item:last-child{border-bottom:none}
+.step-num{width:52px;flex-shrink:0;background:linear-gradient(180deg,rgba(120,80,255,.08),rgba(168,85,247,.05));border-right:1px solid var(--glass-soft);display:flex;align-items:flex-start;justify-content:center;padding-top:18px;font-size:14px;font-weight:800;color:var(--accent)}
+.step-body{padding:17px 22px;flex:1}
+.step-body h4{margin:0 0 5px;font-size:14px}
+.step-body p{color:var(--text-muted);font-size:13px;line-height:1.65;margin:0}
+
+/* FAQ */
+.faq-list{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.faq-item{background:rgba(255,255,255,.65);backdrop-filter:blur(14px);border:1.5px solid var(--glass-border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;cursor:pointer;font-size:13.5px;font-weight:600;gap:12px;user-select:none}
+.faq-chevron{font-size:14px;color:var(--text-dim);transition:transform .2s;flex-shrink:0}
+.faq-item.open .faq-chevron{transform:rotate(180deg)}
+.faq-a{display:none;padding:12px 20px 18px;border-top:1px solid var(--glass-soft);color:var(--text-muted);font-size:13px;line-height:1.65}
+.faq-item.open .faq-a{display:block}
+
+/* Footer */
+.footer{background:rgba(255,255,255,.28);backdrop-filter:var(--blur);border-top:1.5px solid rgba(255,255,255,.65);padding:20px 64px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-left{font-size:12px;color:var(--text-dim)}
+.footer-right{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.72);border:1.5px solid var(--glass-border);border-radius:12px;padding:6px 14px 6px 10px}
+.f-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.f-name{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+
+/* Responsive */
+@media(max-width:860px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .hero,.content,.footer{padding-left:20px;padding-right:20px}
+  .fields-row{grid-template-columns:1fr}
+  .ft-header,.ft-row{grid-template-columns:1fr}
+  .ft-header{display:none}
+  .ft-cell{border-right:none;border-bottom:1px solid var(--glass-soft)}
+  .ft-cell:last-child{border-bottom:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo">
+      <div class="logo-mark"><img src="https://pmv.agency/wp-content/uploads/2025/11/pmv-logo-dark.png" alt="PMV Agency"></div>
+      <div><div class="logo-name">UTM Builder</div></div>
+    </div>
+    <div class="sb-pill">Generador de links UTM</div>
+  </div>
+  <nav class="nav">
+    <span class="nav-group-label">Generador</span>
+    <a class="nav-link active" href="#sec-builder">Construir link</a>
+    <span class="nav-group-label">Referencia</span>
+    <a class="nav-link" href="#sec-fields">¿Qué es cada campo?</a>
+    <a class="nav-link" href="#sec-tips">Buenas prácticas</a>
+    <a class="nav-link" href="#sec-faq">FAQ</a>
+  </nav>
+  <div class="sb-foot">pmv.agency</div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="hero">
+    <h1><span class="grad">UTM Builder</span> <span class="dim">— Generador de links con tracking</span></h1>
+    <p>Completa los campos, elige tus parámetros y copia el link con tracking listo para usar en Meta, Google, email o cualquier canal.</p>
+  </header>
+
+  <div class="content">
+
+    <!-- BUILDER -->
+    <section class="section" id="sec-builder">
+      <h2 class="stitle">Crea tu link UTM</h2>
+      <p class="sdesc">Completa los tres campos obligatorios para generar tu URL. Los opcionales te dan más detalle en los reportes.</p>
+
+      <div class="generator">
+        <div class="gen-body">
+
+          <!-- URL Base -->
+          <div class="field-group">
+            <div class="field-label">
+              URL de destino
+              <span class="badge-req">Obligatorio</span>
+            </div>
+            <div class="field-hint">La página a donde va el usuario cuando hace clic. Debe empezar con <code>https://</code></div>
+            <input type="url" id="f-url" placeholder="https://pmv.agency/servicios/performance" oninput="generate()">
+          </div>
+
+          <!-- Source + Medium -->
+          <div class="fields-row">
+            <div class="field-group">
+              <div class="field-label">
+                Fuente <small style="font-size:10px;font-weight:500;text-transform:none;letter-spacing:0">(utm_source)</small>
+                <span class="badge-req">Obligatorio</span>
+              </div>
+              <div class="field-hint">¿Desde dónde viene el usuario?</div>
+              <input type="text" id="f-source" placeholder="meta" oninput="syncChips('f-source','chips-source');generate()">
+              <div class="quick-chips" id="chips-source">
+                <span class="qchip" onclick="setField('f-source',this,'chips-source')">meta</span>
+                <span class="qchip" onclick="setField('f-source',this,'chips-source')">google</span>
+                <span class="qchip" onclick="setField('f-source',this,'chips-source')">tiktok</span>
+                <span class="qchip" onclick="setField('f-source',this,'chips-source')">newsletter</span>
+                <span class="qchip" onclick="setField('f-source',this,'chips-source')">linkedin</span>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                Canal <small style="font-size:10px;font-weight:500;text-transform:none;letter-spacing:0">(utm_medium)</small>
+                <span class="badge-req">Obligatorio</span>
+              </div>
+              <div class="field-hint">¿Qué tipo de canal o formato?</div>
+              <input type="text" id="f-medium" placeholder="paid-social" oninput="syncChips('f-medium','chips-medium');generate()">
+              <div class="quick-chips" id="chips-medium">
+                <span class="qchip" onclick="setField('f-medium',this,'chips-medium')">paid-social</span>
+                <span class="qchip" onclick="setField('f-medium',this,'chips-medium')">cpc</span>
+                <span class="qchip" onclick="setField('f-medium',this,'chips-medium')">email</span>
+                <span class="qchip" onclick="setField('f-medium',this,'chips-medium')">organic</span>
+                <span class="qchip" onclick="setField('f-medium',this,'chips-medium')">referral</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campaign -->
+          <div class="field-group">
+            <div class="field-label">
+              Nombre de campaña <small style="font-size:10px;font-weight:500;text-transform:none;letter-spacing:0">(utm_campaign)</small>
+              <span class="badge-req">Obligatorio</span>
+            </div>
+            <div class="field-hint">Identifica la iniciativa. Sugerencia: <code>marca_país_trimestre_objetivo</code> — por ejemplo <code>pmv_ar_q3_leads</code></div>
+            <input type="text" id="f-campaign" placeholder="pmv_ar_q3_leads" oninput="generate()">
+          </div>
+
+          <!-- Content + Term -->
+          <div class="fields-row">
+            <div class="field-group">
+              <div class="field-label">
+                Contenido <small style="font-size:10px;font-weight:500;text-transform:none;letter-spacing:0">(utm_content)</small>
+                <span class="badge-opt">Opcional</span>
+              </div>
+              <div class="field-hint">Diferencia creatividades o piezas. Útil en A/B testing.</div>
+              <input type="text" id="f-content" placeholder="reel_servicios_v1" oninput="generate()">
+              <div class="quick-chips">
+                <span class="qchip" onclick="setFieldDirect('f-content','reel_v1')">reel_v1</span>
+                <span class="qchip" onclick="setFieldDirect('f-content','story_v1')">story_v1</span>
+                <span class="qchip" onclick="setFieldDirect('f-content','carrusel_v1')">carrusel_v1</span>
+                <span class="qchip" onclick="setFieldDirect('f-content','banner_v1')">banner_v1</span>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                Término <small style="font-size:10px;font-weight:500;text-transform:none;letter-spacing:0">(utm_term)</small>
+                <span class="badge-opt">Opcional</span>
+              </div>
+              <div class="field-hint">Para Google Ads: la keyword. Para otros canales: la audiencia.</div>
+              <input type="text" id="f-term" placeholder="agencia-marketing-digital" oninput="generate()">
+              <div class="quick-chips">
+                <span class="qchip" onclick="setFieldDirect('f-term','marketing-managers')">marketing-managers</span>
+                <span class="qchip" onclick="setFieldDirect('f-term','emprendedores')">emprendedores</span>
+                <span class="qchip" onclick="setFieldDirect('f-term','lookalike')">lookalike</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /gen-body -->
+
+        <!-- Preview -->
+        <div class="gen-preview">
+          <div class="preview-label">
+            URL generada
+            <span class="preview-status ps-empty" id="url-status"><span class="s-dot"></span><span id="status-text">Esperando campos</span></span>
+          </div>
+          <div class="url-display" id="url-display">
+            <span class="url-placeholder">Completa los campos de arriba para ver tu URL con UTMs...</span>
+          </div>
+          <div class="copy-row">
+            <button class="btn-copy" id="btn-copy" onclick="copyUrl()" disabled>
+              <span id="copy-icon">⎘</span>
+              <span id="copy-text">Copiar link</span>
+            </button>
+            <button class="btn-reset" onclick="resetAll()">↺ Limpiar</button>
+            <span class="copy-feedback" id="copy-feedback">¡Link copiado!</span>
+          </div>
+        </div>
+      </div><!-- /generator -->
+    </section>
+
+    <!-- FIELDS REFERENCE -->
+    <section class="section" id="sec-fields">
+      <h2 class="stitle">¿Qué es cada campo?</h2>
+      <p class="sdesc">Los UTMs son parámetros que se agregan a una URL para que Google Analytics y otras herramientas sepan de dónde vino cada visita.</p>
+
+      <div class="ref-grid">
+        <div class="ref-card">
+          <h4>utm_source</h4>
+          <p>El origen. ¿Desde qué plataforma o canal llegó el usuario? Ejemplos: <code>meta</code>, <code>google</code>, <code>newsletter</code></p>
+        </div>
+        <div class="ref-card">
+          <h4>utm_medium</h4>
+          <p>El tipo de canal o formato de tráfico. Ejemplos: <code>paid-social</code>, <code>cpc</code>, <code>email</code>, <code>organic</code></p>
+        </div>
+        <div class="ref-card">
+          <h4>utm_campaign</h4>
+          <p>El nombre de la campaña o iniciativa. Identifica a qué acción pertenece el tráfico. Ejemplo: <code>pmv_ar_q3_leads</code></p>
+        </div>
+        <div class="ref-card">
+          <h4>utm_content</h4>
+          <p>Diferencia piezas dentro de la misma campaña. Muy útil en A/B testing. Ejemplo: <code>reel_servicios_v1</code></p>
+        </div>
+        <div class="ref-card">
+          <h4>utm_term</h4>
+          <p>En Google Ads: la keyword. En social: puedes usarlo para identificar la audiencia. Ejemplo: <code>lookalike-compradores</code></p>
+        </div>
+      </div>
+
+      <div class="field-table" style="margin-top:24px">
+        <div class="ft-header">
+          <div class="ft-cell">Campo</div>
+          <div class="ft-cell">¿Para qué sirve?</div>
+          <div class="ft-cell">Estado</div>
+        </div>
+        <div class="ft-row">
+          <div class="ft-cell"><span class="ft-name">utm_source</span></div>
+          <div class="ft-cell">Origen del tráfico: plataforma o canal</div>
+          <div class="ft-cell"><span class="badge-req">Obligatorio</span></div>
+        </div>
+        <div class="ft-row">
+          <div class="ft-cell"><span class="ft-name">utm_medium</span></div>
+          <div class="ft-cell">Tipo de canal: paid, email, organic…</div>
+          <div class="ft-cell"><span class="badge-req">Obligatorio</span></div>
+        </div>
+        <div class="ft-row">
+          <div class="ft-cell"><span class="ft-name">utm_campaign</span></div>
+          <div class="ft-cell">Nombre de la campaña o iniciativa</div>
+          <div class="ft-cell"><span class="badge-req">Obligatorio</span></div>
+        </div>
+        <div class="ft-row">
+          <div class="ft-cell"><span class="ft-name">utm_content</span></div>
+          <div class="ft-cell">Variante de pieza creativa (A/B testing)</div>
+          <div class="ft-cell"><span class="badge-opt">Opcional</span></div>
+        </div>
+        <div class="ft-row">
+          <div class="ft-cell"><span class="ft-name">utm_term</span></div>
+          <div class="ft-cell">Keyword o segmento de audiencia</div>
+          <div class="ft-cell"><span class="badge-opt">Opcional</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIPS -->
+    <section class="section" id="sec-tips">
+      <h2 class="stitle">Buenas prácticas</h2>
+      <p class="sdesc">Sigue estas reglas para tener datos confiables y dashboards limpios desde el día uno.</p>
+
+      <div class="steps">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Siempre en minúsculas, sin espacios</h4>
+            <p>Los UTMs son case-sensitive. <code>Meta</code> y <code>meta</code> se cuentan por separado en Analytics. Usa guiones en lugar de espacios: <code>paid-social</code>, no <code>paid social</code>.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Elige una convención y no la cambies</h4>
+            <p>No mezcles <code>fb</code>, <code>facebook</code> y <code>meta</code> en la misma cuenta. Define los valores una sola vez y que todo el equipo use los mismos. Este builder ya tiene los más comunes listos.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>utm_campaign con lógica de nomenclatura</h4>
+            <p>Un buen patrón: <code>marca_país_trimestre_objetivo</code>. Ejemplo: <code>pmv_ar_q3_leads</code>. Así puedes filtrar y agrupar fácilmente en los reportes.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>Usa utm_content para A/B testing</h4>
+            <p>Si tienes dos piezas distintas en la misma campaña, diferéncialas con <code>utm_content</code>: <code>reel_v1</code> vs <code>reel_v2</code>. Así sabes cuál pieza convierte mejor.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h4>No pongas UTMs en links internos</h4>
+            <p>Los UTMs son solo para tráfico externo. Si los usas en links de tu propio sitio, vas a sobreescribir el origen real de la visita y tus datos van a quedar mal.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="sec-faq">
+      <h2 class="stitle">Preguntas frecuentes</h2>
+      <p class="sdesc">Lo que más preguntan cuando empiezan a usar UTMs.</p>
+
+      <div class="faq-list">
+        <div class="faq-item open">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Los UTMs afectan el SEO de mi página?
+            <span class="faq-chevron">▾</span>
+          </div>
+          <div class="faq-a">No. Google ignora los parámetros UTM para el indexado. No afectan el posicionamiento. Lo único que hacen es pasar información a Analytics.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Qué pasa si la URL ya tiene parámetros (por ejemplo, <code>?id=123</code>)?
+            <span class="faq-chevron">▾</span>
+          </div>
+          <div class="faq-a">El generador lo detecta automáticamente. Si tu URL ya tiene un <code>?</code>, los UTMs se agregan con <code>&amp;</code>. No necesitas hacer nada.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Qué medio uso para Meta Ads?
+            <span class="faq-chevron">▾</span>
+          </div>
+          <div class="faq-a">Usa <code>paid-social</code> como medio y <code>meta</code> como fuente. Así en Analytics puedes ver todo el tráfico de social pagado junto, sin importar la plataforma.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿El link con UTMs es más largo? ¿Eso es un problema?
+            <span class="faq-chevron">▾</span>
+          </div>
+          <div class="faq-a">Sí, es más largo, pero no es un problema funcional. Si quieres un link corto para compartir en redes, pasa el resultado por un acortador como Bitly o el propio de Meta Business Suite, que también respetan los UTMs.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            ¿Puedo usar este builder para cualquier dominio, no solo pmv.agency?
+            <span class="faq-chevron">▾</span>
+          </div>
+          <div class="faq-a">Sí. Los UTMs funcionan en cualquier URL. Pega la URL de destino que quieras en el campo de arriba y el generador arma el link correctamente.</div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+
+  <footer class="footer">
+    <div class="footer-left">pmv.agency · UTM Builder</div>
+    <div class="footer-right"><div class="f-dot"></div><span class="f-name">pmv.agency</span></div>
+  </footer>
+</main>
+</div>
+
+<script>
+let generatedUrl = '';
+
+function sanitize(val) {
+  return val.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+function generate() {
+  const url = document.getElementById('f-url').value.trim();
+  const source = sanitize(document.getElementById('f-source').value);
+  const medium = sanitize(document.getElementById('f-medium').value);
+  const campaign = sanitize(document.getElementById('f-campaign').value);
+  const content = sanitize(document.getElementById('f-content').value);
+  const term = sanitize(document.getElementById('f-term').value);
+
+  const display = document.getElementById('url-display');
+  const status = document.getElementById('url-status');
+  const statusText = document.getElementById('status-text');
+  const btn = document.getElementById('btn-copy');
+
+  const hasRequired = url && source && medium && campaign;
+  const hasPartial = url || source || medium || campaign;
+  const isValidUrl = url && (url.startsWith('http://') || url.startsWith('https://'));
+
+  // Validate URL
+  const urlInput = document.getElementById('f-url');
+  if (url && !isValidUrl) {
+    urlInput.classList.add('error');
+    urlInput.classList.remove('valid');
+  } else if (url && isValidUrl) {
+    urlInput.classList.remove('error');
+    urlInput.classList.add('valid');
+  } else {
+    urlInput.classList.remove('error','valid');
+  }
+
+  if (!hasPartial) {
+    status.className = 'preview-status ps-empty';
+    statusText.textContent = 'Esperando campos';
+    display.innerHTML = '<span class="url-placeholder">Completa los campos de arriba para ver tu URL con UTMs...</span>';
+    display.classList.remove('has-url');
+    btn.disabled = true;
+    generatedUrl = '';
+    return;
+  }
+
+  if (url && !isValidUrl) {
+    status.className = 'preview-status ps-error';
+    statusText.textContent = 'URL inválida';
+    display.innerHTML = '<span style="color:var(--error);font-size:13px">La URL debe empezar con https:// o http://</span>';
+    display.classList.remove('has-url');
+    btn.disabled = true;
+    generatedUrl = '';
+    return;
+  }
+
+  if (!hasRequired) {
+    status.className = 'preview-status ps-partial';
+    statusText.textContent = 'Faltan campos obligatorios';
+    display.innerHTML = '<span class="url-placeholder">Completa URL, Fuente, Canal y Campaña para generar el link...</span>';
+    display.classList.remove('has-url');
+    btn.disabled = true;
+    generatedUrl = '';
+    return;
+  }
+
+  // Build URL
+  const separator = url.includes('?') ? '&' : '?';
+  const params = [];
+  params.push(['utm_source', source]);
+  params.push(['utm_medium', medium]);
+  params.push(['utm_campaign', campaign]);
+  if (content) params.push(['utm_content', content]);
+  if (term) params.push(['utm_term', term]);
+
+  const queryString = params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  generatedUrl = url + separator + queryString;
+
+  // Render highlighted
+  const qMark = `<span class="url-q">${separator}</span>`;
+  const paramsHtml = params.map(([k, v], i) => {
+    const amp = i > 0 ? '<span class="url-amp">&amp;</span>' : '';
+    return `${amp}<span class="url-key">${k}</span><span class="url-eq">=</span><span class="url-val">${encodeURIComponent(v)}</span>`;
+  }).join('');
+
+  display.innerHTML = `<span class="url-base-part">${escHtml(url)}</span>${qMark}${paramsHtml}`;
+  display.classList.add('has-url');
+
+  status.className = 'preview-status ps-ready';
+  statusText.textContent = 'Listo para copiar';
+  btn.disabled = false;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setField(inputId, chipEl, chipsId) {
+  const val = chipEl.textContent;
+  document.getElementById(inputId).value = val;
+  document.querySelectorAll(`#${chipsId} .qchip`).forEach(c => c.classList.remove('active'));
+  chipEl.classList.add('active');
+  generate();
+}
+
+function setFieldDirect(inputId, val) {
+  document.getElementById(inputId).value = val;
+  generate();
+}
+
+function syncChips(inputId, chipsId) {
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  document.querySelectorAll(`#${chipsId} .qchip`).forEach(c => {
+    c.classList.toggle('active', c.textContent === val);
+  });
+}
+
+function copyUrl() {
+  if (!generatedUrl) return;
+  navigator.clipboard.writeText(generatedUrl).then(() => {
+    const btn = document.getElementById('btn-copy');
+    const copyText = document.getElementById('copy-text');
+    const feedback = document.getElementById('copy-feedback');
+    btn.classList.add('copied');
+    copyText.textContent = '¡Copiado!';
+    feedback.classList.add('show');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      copyText.textContent = 'Copiar link';
+      feedback.classList.remove('show');
+    }, 2500);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = generatedUrl;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+function resetAll() {
+  ['f-url','f-source','f-medium','f-campaign','f-content','f-term'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('error','valid');
+  });
+  document.querySelectorAll('.qchip').forEach(c => c.classList.remove('active'));
+  generate();
+}
+
+function toggleFaq(el) {
+  el.closest('.faq-item').classList.toggle('open');
+}
+
+// Nav active state on scroll
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = document.querySelectorAll('.section');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === `#${id}`);
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
